@@ -1,0 +1,111 @@
+\chapter{Fundamentos matemáticos desde cero}
+
+\section{Por qué necesitamos formalización}
+
+Un juego como tres en raya parece simple cuando lo juega una persona. Sin embargo, para analizarlo como algoritmo necesitamos transformar expresiones informales como ``me conviene esta jugada'' en objetos matemáticos verificables. Esa transformación requiere conjuntos, funciones, relaciones, árboles, recursión, orden y prueba por inducción.
+
+\begin{intuitionbox}
+Una persona mira un tablero y piensa: ``si juego aquí, mi rival puede bloquear; si no bloquea, gano''. Un algoritmo no entiende frases de ese tipo. Necesita una lista de estados, una regla para pasar de un estado a otro y una función que asigne valor a las posiciones finales.
+\end{intuitionbox}
+
+\section{Conjuntos}
+
+\begin{definition}[Conjunto]
+Un conjunto es una colección de objetos. Si un objeto $x$ pertenece a un conjunto $A$, escribimos
+\[
+ x \in A.
+\]
+Si $x$ no pertenece a $A$, escribimos $x \notin A$.
+\end{definition}
+
+En juegos, el conjunto más importante será el conjunto de estados posibles. Lo denotaremos por $\States$. Un estado puede ser un tablero de tres en raya, una posición de ajedrez o una posición de damas.
+
+\begin{example}[Estados en tres en raya]
+Si usamos los símbolos $X$, $O$ y $\blank$, un tablero de tres en raya es una matriz de $3\times 3$ cuyas entradas pertenecen al conjunto
+\[
+\{X,O,\blank\}.
+\]
+Por tanto, el conjunto de todos los tableros posibles está contenido en
+\[
+\{X,O,\blank\}^{3\times 3}.
+\]
+No todos esos tableros son legales, porque algunos pueden tener demasiadas $X$ o demasiadas $O$.
+\end{example}
+
+\section{Funciones}
+
+\begin{definition}[Función]
+Una función $f:A\to B$ asigna a cada elemento de $A$ exactamente un elemento de $B$. El conjunto $A$ se llama dominio y el conjunto $B$ se llama codominio.
+\end{definition}
+
+En un juego usamos funciones para responder preguntas como:
+
+\begin{itemize}[nosep]
+\item ¿qué jugador mueve en el estado $s$? Esto se modela como $\Player(s)$;
+\item ¿qué jugadas son legales en $s$? Esto se modela como $\Legal(s)$;
+\item ¿qué estado resulta al aplicar una jugada $a$? Esto se modela como $\Succ(s,a)$;
+\item ¿qué valor tiene un estado terminal? Esto se modela como $\Utility(s)$.
+\end{itemize}
+
+\section{Cuantificadores y símbolos}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Símbolo & Lectura & Uso en este libro\\
+\midrule
+$\forall$ & para todo & $\forall s\in\States$ significa ``para todo estado''\\
+$\exists$ & existe & $\exists a\in\Legal(s)$ significa ``existe una jugada legal''\\
+$\in$ & pertenece a & $s\in\States$ significa ``$s$ es un estado''\\
+$\Rightarrow$ & implica & si se cumple lo primero, se cumple lo segundo\\
+$\Leftrightarrow$ & si y solo si & equivalencia lógica\\
+$\max$ & máximo & el mayor valor de una colección\\
+$\min$ & mínimo & el menor valor de una colección\\
+$-\infty$ & menor que todo valor finito & cota inferior inicial\\
+$+\infty$ & mayor que todo valor finito & cota superior inicial\\
+$\alpha$ & mejor cota inferior conocida & valor mínimo ya garantizado para MAX\\
+$\beta$ & mejor cota superior conocida & valor máximo que MIN permitirá\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Relaciones}
+
+\begin{definition}[Relación binaria]
+Una relación binaria $R$ entre elementos de un conjunto $A$ permite decir si dos elementos están conectados de alguna manera. Escribimos $xRy$ para indicar que $x$ está relacionado con $y$.
+\end{definition}
+
+En árboles de juego usaremos una relación padre--hijo. Si $s'$ se obtiene desde $s$ mediante una jugada legal, diremos que $s'$ es hijo de $s$.
+
+\[
+ s' \in \Children(s) \quad \Longleftrightarrow \quad \exists a\in\Legal(s): s'=\Succ(s,a).
+\]
+
+\section{Inducción matemática}
+
+\begin{definition}[Principio de inducción]
+Para demostrar que una afirmación $P(n)$ es verdadera para todo número natural $n$, basta demostrar dos cosas:
+\begin{enumerate}[nosep]
+\item Caso base: $P(0)$ es verdadera.
+\item Paso inductivo: si $P(k)$ es verdadera, entonces $P(k+1)$ también es verdadera.
+\end{enumerate}
+\end{definition}
+
+\begin{intuitionbox}
+La inducción es como una fila de fichas de dominó. El caso base tira la primera ficha. El paso inductivo garantiza que cada ficha que cae empuja la siguiente. Entonces caen todas.
+\end{intuitionbox}
+
+\section{Recursión}
+
+Un árbol de juego se define recursivamente: el valor de un estado depende de los valores de sus hijos, y el valor de cada hijo depende de los valores de sus propios hijos. Esta estructura hace que las demostraciones por inducción sean naturales.
+
+\begin{definition}[Altura restante]
+La altura restante $h(s)$ de un estado $s$ es el máximo número de jugadas que pueden realizarse desde $s$ hasta llegar a un estado terminal.
+\end{definition}
+
+Si $s$ ya es terminal, entonces $h(s)=0$. Si no es terminal, entonces
+\[
+ h(s)=1+\max\{h(s'):s'\in\Children(s)\}.
+\]
+
+La mayoría de pruebas de corrección se harán por inducción sobre $h(s)$, no sobre el número total de nodos del árbol. Esto permite razonar desde las hojas hacia la raíz.
