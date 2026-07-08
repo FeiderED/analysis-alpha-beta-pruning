@@ -1,0 +1,85 @@
+\usepackage[spanish,es-noquoting]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsfonts,amsthm,mathtools}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,trees,calc,fit,shapes.geometric}
+\usepackage{forest}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\geometry{margin=2.6cm}
+
+% Paleta suave
+\definecolor{softBlue}{HTML}{EAF2FB}
+\definecolor{softBlueLine}{HTML}{7EA6C8}
+\definecolor{softGreen}{HTML}{ECF7EF}
+\definecolor{softGreenLine}{HTML}{7FB58D}
+\definecolor{softYellow}{HTML}{FFF8DC}
+\definecolor{softYellowLine}{HTML}{D8B35A}
+\definecolor{softRed}{HTML}{FBEAEA}
+\definecolor{softRedLine}{HTML}{C97E7E}
+\definecolor{softGray}{HTML}{F5F5F5}
+\definecolor{softGrayLine}{HTML}{A0A0A0}
+
+\newtheorem{definition}{Definición}[chapter]
+\newtheorem{theorem}[definition]{Teorema}
+\newtheorem{lemma}[definition]{Lema}
+\newtheorem{proposition}[definition]{Proposición}
+\newtheorem{corollary}[definition]{Corolario}
+\newtheorem{invariant}[definition]{Invariante}
+
+\theoremstyle{remark}
+\newtheorem{remark}[definition]{Observación}
+\newtheorem{example}[definition]{Ejemplo}
+
+\newtcolorbox{intuitionbox}{colback=softBlue,colframe=softBlueLine,title=Intuición,breakable}
+\newtcolorbox{formalbox}{colback=softGreen,colframe=softGreenLine,title=Formalización,breakable}
+\newtcolorbox{warningbox}{colback=softRed,colframe=softRedLine,title=Cuidado,breakable}
+\newtcolorbox{stepbox}[1]{colback=softYellow,colframe=softYellowLine,title={#1},breakable}
+\newtcolorbox{summarybox}{colback=softGray,colframe=softGrayLine,title=Resumen,breakable}
+
+\newcommand{\States}{\mathcal{S}}
+\newcommand{\Moves}{\mathcal{M}}
+\newcommand{\Legal}{\operatorname{Legal}}
+\newcommand{\Succ}{\operatorname{Succ}}
+\newcommand{\Term}{\operatorname{Terminal}}
+\newcommand{\Player}{\operatorname{player}}
+\newcommand{\Utility}{\operatorname{Utility}}
+\newcommand{\Value}{\operatorname{Value}}
+\newcommand{\Children}{\operatorname{Children}}
+\newcommand{\MAX}{\mathrm{MAX}}
+\newcommand{\MIN}{\mathrm{MIN}}
+\newcommand{\true}{\mathrm{true}}
+\newcommand{\false}{\mathrm{false}}
+
+\newcommand{\blank}{\ensuremath{\cdot}}
+\newcommand{\board}[9]{%
+\begin{array}{|c|c|c|}\hline
+#1 & #2 & #3 \\ \hline
+#4 & #5 & #6 \\ \hline
+#7 & #8 & #9 \\ \hline
+\end{array}}
+
+\forestset{
+  game tree/.style={
+    for tree={
+      draw,
+      rounded corners,
+      align=center,
+      edge={-Latex},
+      parent anchor=south,
+      child anchor=north,
+      l sep=14mm,
+      s sep=8mm,
+      font=\small
+    }
+  }
+}
