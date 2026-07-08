@@ -1,0 +1,187 @@
+\chapter{Tres en raya paso a paso}
+
+\section{Estado inicial del ejemplo}
+
+Usaremos una posición intermedia para que el árbol sea suficientemente pequeño como para dibujarlo, pero suficientemente rico como para mostrar decisiones reales.
+
+\[
+S_0=\board{X}{O}{X}{\blank}{O}{\blank}{\blank}{\blank}{\blank}
+\]
+
+Es el turno de MAX, que juega con $X$. Las casillas vacías son
+\[
+\{4,6,7,8,9\}.
+\]
+Por tanto, el factor de ramificación local es
+\[
+ b(S_0)=5.
+\]
+
+\begin{stepbox}{Paso 1: identificar movimientos legales}
+Desde $S_0$, MAX puede jugar en cualquiera de las cinco casillas vacías. Nombramos los movimientos por la casilla elegida:
+\[
+ a_4,a_6,a_7,a_8,a_9.
+\]
+Cada movimiento genera un hijo distinto.
+\end{stepbox}
+
+\section{Primer nivel del árbol}
+
+\[
+\begin{forest}
+game tree
+[$S_0$\\$X$ mueve
+  [$S_4$\\$X$ en 4]
+  [$S_6$\\$X$ en 6]
+  [$S_7$\\$X$ en 7]
+  [$S_8$\\$X$ en 8]
+  [$S_9$\\$X$ en 9]
+]
+\end{forest}
+\]
+
+\section{Tableros de los hijos}
+
+\begin{center}
+\begin{tabular}{cc}
+$S_4=\board{X}{O}{X}{X}{O}{\blank}{\blank}{\blank}{\blank}$ &
+$S_6=\board{X}{O}{X}{\blank}{O}{X}{\blank}{\blank}{\blank}$ \\\[5mm]
+$S_7=\board{X}{O}{X}{\blank}{O}{\blank}{X}{\blank}{\blank}$ &
+$S_8=\board{X}{O}{X}{\blank}{O}{\blank}{\blank}{X}{\blank}$ \\\[5mm]
+\multicolumn{2}{c}{$S_9=\board{X}{O}{X}{\blank}{O}{\blank}{\blank}{\blank}{X}$}
+\end{tabular}
+\end{center}
+
+\begin{stepbox}{Paso 2: revisar si algún hijo es terminal}
+Un estado es terminal si alguien ganó o si no quedan movimientos. Ninguno de los cinco hijos anteriores contiene tres $X$ alineadas ni tres $O$ alineadas, y todos conservan casillas vacías. Por tanto, ninguno es terminal.
+\end{stepbox}
+
+\section{Segundo nivel: responde MIN}
+
+Ahora MIN juega con $O$. Analicemos primero el hijo $S_4$.
+
+\[
+S_4=\board{X}{O}{X}{X}{O}{\blank}{\blank}{\blank}{\blank}
+\]
+
+Las casillas vacías son $\{6,7,8,9\}$. Por tanto, MIN tiene cuatro respuestas.
+
+\[
+\begin{forest}
+game tree
+[$S_4$\\$O$ mueve
+  [$S_{4,6}$\\$O$ en 6]
+  [$S_{4,7}$\\$O$ en 7]
+  [$S_{4,8}$\\$O$ en 8]
+  [$S_{4,9}$\\$O$ en 9]
+]
+\end{forest}
+\]
+
+Los tableros son:
+
+\begin{center}
+\begin{tabular}{cc}
+$S_{4,6}=\board{X}{O}{X}{X}{O}{O}{\blank}{\blank}{\blank}$ &
+$S_{4,7}=\board{X}{O}{X}{X}{O}{\blank}{O}{\blank}{\blank}$ \\\[5mm]
+$S_{4,8}=\board{X}{O}{X}{X}{O}{\blank}{\blank}{O}{\blank}$ &
+$S_{4,9}=\board{X}{O}{X}{X}{O}{\blank}{\blank}{\blank}{O}$
+\end{tabular}
+\end{center}
+
+\begin{stepbox}{Paso 3: detectar amenazas inmediatas}
+En $S_{4,8}$, MIN coloca $O$ en la casilla 8. Entonces la columna central queda
+\[
+2,5,8 = O,O,O.
+\]
+Por tanto, $S_{4,8}$ es terminal y MAX pierde:
+\[
+\Utility(S_{4,8})=-1.
+\]
+\end{stepbox}
+
+\section{Retropropagación Minimax local}
+
+Como $S_4$ es un nodo de MIN, su valor es el mínimo de los valores de sus hijos:
+\[
+V(S_4)=\min\{V(S_{4,6}),V(S_{4,7}),V(S_{4,8}),V(S_{4,9})\}.
+\]
+Ya sabemos que
+\[
+V(S_{4,8})=-1.
+\]
+Como en tres en raya los valores posibles son $-1,0,1$, ningún valor puede ser menor que $-1$. Por tanto,
+\[
+V(S_4)=-1.
+\]
+
+\begin{intuitionbox}
+MAX no debe jugar en la casilla 4, porque MIN responde en la casilla 8 y gana inmediatamente formando la columna central.
+\end{intuitionbox}
+
+\section{Lectura Alpha--Beta del mismo fragmento}
+
+Al comenzar en la raíz:
+\[
+\alpha=-\infty,\qquad \beta=+\infty.
+\]
+Supongamos que el primer hijo examinado es $S_4$. Entramos al nodo $S_4$, donde mueve MIN. MIN busca un hijo con valor lo más bajo posible.
+
+Cuando MIN encuentra $S_{4,8}$ con valor $-1$, sabe que puede forzar como máximo $-1$ para MAX desde $S_4$. Como $-1$ es el peor valor posible para MAX, no necesita seguir buscando respuestas mejores para MIN. Localmente, el subárbol queda resuelto.
+
+\begin{stepbox}{Paso 4: qué se aprendió}
+El análisis de $S_4$ no requiere expandir todos sus descendientes. Basta encontrar una refutación inmediata. Esta es la intuición operativa de la poda: una rama se descarta cuando ya no puede mejorar la decisión del jugador que la consideraba.
+\end{stepbox}
+
+\section{Árbol anotado parcial}
+
+\[
+\begin{forest}
+game tree
+[$S_0$\\MAX\\$\alpha=-\infty,\beta=+\infty$
+  [$S_4$\\MIN
+    [$S_{4,6}$]
+    [$S_{4,7}$]
+    [$S_{4,8}$\\terminal\\$-1$, fill=softRed]
+    [$S_{4,9}$]
+  ]
+  [$S_6$]
+  [$S_7$]
+  [$S_8$]
+  [$S_9$]
+]
+\end{forest}
+\]
+
+\section{Explicación del nodo marcado}
+
+El nodo $S_{4,8}$ representa la secuencia:
+\[
+X\text{ juega }4,\qquad O\text{ responde }8.
+\]
+El tablero resultante es
+\[
+\board{X}{O}{X}{X}{O}{\blank}{\blank}{O}{\blank}.
+\]
+La columna central contiene $O$ en las posiciones $2,5,8$. Por tanto, MIN gana. Como la utilidad se mide desde MAX,
+\[
+\Utility(S_{4,8})=-1.
+\]
+
+\section{Continuación esperada del capítulo}
+
+Las siguientes entregas desarrollarán los otros hijos $S_6,S_7,S_8,S_9$ con el mismo nivel de detalle:
+
+\begin{enumerate}
+\item expansión completa del subárbol relevante;
+\item detección de amenazas;
+\item evaluación de hojas;
+\item retropropagación Minimax;
+\item comparación con Alpha--Beta;
+\item árbol coloreado con ramas podadas;
+\item tabla de evolución de $\alpha$ y $\beta$.
+\end{enumerate}
+
+\begin{summarybox}
+Este capítulo no pretende resolver todo tres en raya en una página. El objetivo es mostrar cómo se construye el árbol correctamente: estado por estado, movimiento por movimiento, valor por valor.
+\end{summarybox}
