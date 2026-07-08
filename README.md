@@ -1,31 +1,44 @@
-# Analysis Alpha-Beta Pruning
+# Análisis formal de Alpha-Beta Pruning
 
-Guía en español, desde cero, para estudiar **minimax**, **negamax** y **poda alfa-beta** con análisis formal inspirado en el paper de Knuth y Moore, *An Analysis of Alpha-Beta Pruning*.
+Libro universitario en español sobre **Minimax**, **Negamax**, **Branch and Bound** y **Alpha-Beta Pruning**.
 
-## Archivos principales
+El objetivo es desarrollar el tema con una estructura cercana a CLRS: definiciones formales, notación, lemas, teoremas, corolarios, demostraciones y ejemplos gráficos completamente explicados.
 
-- `docs/guia-alpha-beta-pruning.tex`: guía completa en LaTeX con colores suaves, diagramas TikZ, demostraciones por inducción, notación matemática y ejemplos con 3 en raya, ajedrez y damas.
-- `src/alpha_beta.py`: implementación didáctica en Python de minimax, negamax, alfa-beta, 3 en raya y árboles de ejemplo.
+## Enfoque actual
 
-## Compilar la guía
+- El cuerpo principal del libro no usa código.
+- La prioridad es la formalización matemática.
+- Las pruebas se desarrollan paso a paso, sin asumir conocimientos previos.
+- Los ejemplos de juegos se explican mediante estados, árboles, utilidad, cotas y poda.
+- Los árboles de tres en raya, damas y ajedrez se construyen nodo por nodo.
 
-Desde la raíz del repositorio:
+## Estructura nueva
 
-```bash
-pdflatex -interaction=nonstopmode docs/guia-alpha-beta-pruning.tex
-pdflatex -interaction=nonstopmode docs/guia-alpha-beta-pruning.tex
+```text
+book/
+  main.tex
+  preamble.tex
+  bibliography.bib
+  chapters/
+    00-prefacio.tex
+    01-fundamentos.tex
+    02-arboles-de-juego.tex
+    03-minimax-formal.tex
+    04-alpha-beta-formal.tex
+    05-tres-en-raya-paso-a-paso.tex
+    06-damas-y-ajedrez-paso-a-paso.tex
 ```
 
-El segundo pase ayuda a estabilizar referencias internas.
+La carpeta `docs/` conserva material preliminar anterior. El desarrollo nuevo se hará en `book/`.
 
-## Ejecutar el código
+## Compilación
 
 ```bash
-python src/alpha_beta.py
+latexmk -pdf book/main.tex
 ```
 
-El script imprime comparaciones entre minimax completo y alfa-beta sobre árboles pequeños, además de una demostración de 3 en raya.
+También puede compilarse con `pdflatex` en varias pasadas.
 
-## Objetivo pedagógico
+## Estado
 
-La guía no asume conocimientos previos. Primero define juegos, posiciones, árboles, valores terminales, funciones de evaluación, máximo, mínimo, cotas e inducción. Luego deriva minimax, negamax y alfa-beta paso a paso, explica los invariantes y demuestra por qué la poda no cambia el resultado.
+Inicio del libro formal ampliado. La primera entrega establece el marco editorial y comienza el desarrollo detallado de los ejemplos con árboles de juego, especialmente tres en raya.
