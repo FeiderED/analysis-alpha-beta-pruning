@@ -1,0 +1,421 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[spanish,es-noquoting]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usepackage{forest}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\geometry{margin=2.4cm}
+
+% Paleta suave
+\definecolor{softBlue}{HTML}{E8F1FA}
+\definecolor{softBlueLine}{HTML}{7AA6C2}
+\definecolor{softGreen}{HTML}{EAF7EF}
+\definecolor{softGreenLine}{HTML}{7FB58D}
+\definecolor{softYellow}{HTML}{FFF6D8}
+\definecolor{softYellowLine}{HTML}{D4B35F}
+\definecolor{softRed}{HTML}{FBEAEA}
+\definecolor{softRedLine}{HTML}{C77D7D}
+\definecolor{softGray}{HTML}{F5F5F5}
+\definecolor{codeBg}{HTML}{F8F8F8}
+\definecolor{codeKey}{HTML}{5876A3}
+\definecolor{codeCom}{HTML}{6B8E6B}
+
+\hypersetup{colorlinks=true, linkcolor=softBlueLine, urlcolor=softBlueLine, citecolor=softGreenLine}
+\setlist[itemize]{topsep=3pt,itemsep=2pt}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt}
+
+\lstdefinestyle{pythonSoft}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codeKey}\bfseries,
+  commentstyle=\color{codeCom},
+  stringstyle=\color{softRedLine},
+  backgroundcolor=\color{codeBg},
+  frame=single,
+  rulecolor=\color{softBlueLine},
+  breaklines=true,
+  tabsize=4,
+  showstringspaces=false
+}
+
+\newtcolorbox{idea}{colback=softBlue,colframe=softBlueLine,title=Idea clave,fonttitle=\bfseries}
+\newtcolorbox{warningbox}{colback=softYellow,colframe=softYellowLine,title=Atención,fonttitle=\bfseries}
+\newtcolorbox{proofbox}{colback=softGreen,colframe=softGreenLine,title=Demostración guiada,fonttitle=\bfseries}
+\newtcolorbox{examplebox}{colback=softGray,colframe=softBlueLine,title=Ejemplo,fonttitle=\bfseries}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definición}[section]
+\newtheorem{theorem}{Teorema}[section]
+\newtheorem{lemma}{Lema}[section]
+\newtheorem{corollary}{Corolario}[section]
+
+\title{Guía detallada de Minimax y Poda Alfa--Beta\\\large Desde cero, con demostraciones, juegos y código}
+\author{Repositorio: \texttt{FeiderED/analysis-alpha-beta-pruning}}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Qué problema resuelve alfa--beta}
+
+Un programa que juega ajedrez, damas o 3 en raya debe elegir una jugada. Para decidir, imagina muchas continuaciones posibles: yo juego, el rival responde, yo vuelvo a jugar, etc. Esa estructura es un \textbf{árbol de juego}.
+
+\begin{idea}
+La poda alfa--beta no cambia la respuesta de minimax. Solamente evita explorar ramas que ya no pueden afectar la decisión final.
+\end{idea}
+
+El paper de Knuth y Moore analiza esta técnica para árboles de juego: primero presenta el método y su prueba de corrección, luego estudia optimalidad y cotas de tiempo. La guía sigue esa línea, pero explicando cada símbolo desde cero.
+
+\section{Vocabulario mínimo}
+
+\begin{definition}[Posición]
+Una \textbf{posición} es un estado del juego. En 3 en raya puede ser un tablero de 9 casillas; en ajedrez incluye piezas, turno, enroque, jaque, etc.; en damas incluye fichas normales, damas coronadas y turno.
+\end{definition}
+
+\begin{definition}[Sucesores]
+Si desde una posición $p$ existen jugadas legales hacia $p_1,p_2,\ldots,p_d$, esas posiciones son los \textbf{sucesores} o \textbf{hijos} de $p$. El número $d$ es el \textbf{factor de ramificación} local.
+\end{definition}
+
+\begin{definition}[Terminal]
+Una posición terminal es una posición donde ya no seguimos buscando. Puede ser terminal real, por ejemplo victoria, derrota o empate; o terminal artificial, por ejemplo cuando cortamos la búsqueda a profundidad 6 y usamos una función heurística.
+\end{definition}
+
+\begin{definition}[Valor terminal]
+$f(p)$ es el valor de una posición terminal. Ejemplo para 3 en raya desde el punto de vista de X:
+\[
+ f(p)=\begin{cases}
+ 1 & \text{si X gana},\\
+ 0 & \text{si empata},\\
+ -1 & \text{si X pierde}.
+ \end{cases}
+\]
+\end{definition}
+
+\section{Notación matemática desde cero}
+
+\begin{center}
+\begin{tabular}{ll}
+\hline
+Símbolo & Significado \\
+\hline
+$p$ & una posición del juego \\
+$p_i$ & el hijo número $i$ de $p$ \\
+$d$ & cantidad de hijos de una posición \\
+$f(p)$ & valor de una posición terminal \\
+$F(p)$ & valor real de una posición si ambos juegan óptimamente \\
+$\max(a,b,c)$ & el mayor entre $a,b,c$ \\
+$\min(a,b,c)$ & el menor entre $a,b,c$ \\
+$\alpha$ & cota inferior: lo mejor ya garantizado para MAX o jugador actual \\
+$\beta$ & cota superior: límite impuesto por el rival \\
+$\infty$ & infinito, usado como valor mayor que cualquier puntuación posible \\
+$-\infty$ & menos infinito, usado como valor menor que cualquier puntuación posible \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Minimax: dos jugadores, MAX y MIN}
+
+MAX quiere hacer el valor lo más grande posible. MIN quiere hacerlo lo más pequeño posible. Si todos los valores se miden desde el punto de vista de MAX, entonces:
+\[
+F(p)=\begin{cases}
+ f(p), & \text{si }p\text{ es terminal},\\
+ \max(F(p_1),\ldots,F(p_d)), & \text{si juega MAX},\\
+ \min(F(p_1),\ldots,F(p_d)), & \text{si juega MIN}.
+\end{cases}
+\]
+
+\begin{examplebox}
+Árbol simple:
+\[
+\begin{forest}
+for tree={draw, rounded corners, align=center, s sep=9mm, l sep=10mm}
+[MAX
+  [MIN [3] [5]]
+  [MIN [2] [9]]
+]
+\end{forest}
+\]
+Cada nodo MIN toma el menor: izquierda $\min(3,5)=3$, derecha $\min(2,9)=2$. La raíz MAX toma $\max(3,2)=3$. Por tanto, la mejor primera jugada es ir a la izquierda.
+\end{examplebox}
+
+\section{Negamax: una sola fórmula}
+
+En juegos de suma cero, lo que es bueno para mí es malo para el rival. Por eso, cuando paso el turno, el signo cambia. En vez de escribir un caso MAX y otro MIN, se puede escribir:
+\[
+F(p)=\begin{cases}
+ f(p), & \text{si }p\text{ es terminal},\\
+ \max(-F(p_1),\ldots,-F(p_d)), & \text{si }p\text{ no es terminal}.
+\end{cases}
+\]
+
+\begin{idea}
+El signo menos aparece porque $F(p_i)$ está calculado desde el punto de vista del jugador que moverá en $p_i$, que es el rival del jugador actual.
+\end{idea}
+
+\section{Algoritmo de fuerza bruta}
+
+El algoritmo directo visita todo el árbol hasta las hojas.
+
+\begin{lstlisting}[style=pythonSoft]
+def negamax(p):
+    if terminal(p):
+        return f(p)
+    mejor = -infinito
+    for hijo in sucesores(p):
+        valor = -negamax(hijo)
+        mejor = max(mejor, valor)
+    return mejor
+\end{lstlisting}
+
+Si el árbol tiene factor de ramificación $b$ y profundidad $m$, el número de hojas es aproximadamente $b^m$. Por eso ajedrez y damas no se resuelven explorando todo.
+
+\section{Idea de poda}
+
+Supón que ya encontraste una jugada que te garantiza valor $5$. Luego analizas otra jugada y el rival tiene una respuesta que te deja como máximo $2$. No necesitas seguir buscando si esa segunda jugada podría darte $3$ o $4$: ya sabes que no supera $5$.
+
+\begin{warningbox}
+La poda no significa ``adivinar''. Significa demostrar que una rama no puede cambiar la decisión final.
+\end{warningbox}
+
+\section{Alfa y beta}
+
+\begin{definition}[Alfa]
+$\alpha$ es una cota inferior: el jugador actual ya sabe que puede conseguir al menos $\alpha$ en alguna alternativa previa.
+\end{definition}
+
+\begin{definition}[Beta]
+$\beta$ es una cota superior: el rival tiene una alternativa previa que impide que el jugador actual obtenga $\beta$ o más.
+\end{definition}
+
+En forma negamax, la llamada se escribe:
+\[
+F_2(p,\alpha,\beta).
+\]
+La ventana de búsqueda es $[\alpha,\beta)$. Nos interesa saber si el valor real cae por debajo, dentro o por encima de esa ventana:
+\[
+F_2(p,\alpha,\beta)\begin{cases}
+\le \alpha, & \text{si }F(p)\le \alpha,\\
+=F(p), & \text{si }\alpha < F(p)<\beta,\\
+\ge \beta, & \text{si }F(p)\ge \beta.
+\end{cases}
+\]
+
+\section{Pseudocódigo alfa--beta en negamax}
+
+\begin{lstlisting}[style=pythonSoft]
+def alphabeta(p, alpha, beta):
+    if terminal(p):
+        return f(p)
+
+    m = alpha
+    for hijo in sucesores(p):
+        t = -alphabeta(hijo, -beta, -m)
+        if t > m:
+            m = t
+        if m >= beta:
+            break  # poda beta
+    return m
+\end{lstlisting}
+
+¿Por qué la llamada recursiva usa $-\beta$ y $-m$? Porque al bajar al hijo cambia el jugador. Lo que para mí es límite superior $\beta$, para mi rival se convierte en límite inferior $-\beta$; y mi mejor valor actual $m$ se convierte en el límite que el rival debe superar con signo cambiado.
+
+\section{Invariante de corrección}
+
+Un \textbf{invariante} es una afirmación que sigue siendo verdadera antes y después de cada iteración de un bucle.
+
+Para alfa--beta, después de haber revisado hijos $p_1,\ldots,p_{i-1}$, se mantiene:
+\[
+ m = \max(\alpha, -F(p_1),\ldots,-F(p_{i-1}))
+\]
+y además, mientras no haya corte, $m<\beta$.
+
+\begin{proofbox}
+Base: antes de revisar hijos no hay valores explorados. Entonces el máximo sobre el conjunto vacío no aporta nada y queda $m=\alpha$.
+
+Paso inductivo: supón que el invariante es cierto antes de revisar $p_i$. Se calcula $t=-F_2(p_i,-\beta,-m)$. Por hipótesis inductiva aplicada al subárbol, si el hijo puede mejorar el valor dentro de la ventana, $t=-F(p_i)$. Luego se actualiza $m=\max(m,t)$, que equivale a añadir el nuevo término $-F(p_i)$ al máximo. Si $m\ge\beta$, se corta porque el rival ya evitará esta línea. Si no se corta, el invariante queda listo para la siguiente iteración.
+\end{proofbox}
+
+\section{Demostración formal por inducción estructural}
+
+\begin{theorem}[Corrección de alfa--beta]
+Para toda posición finita $p$ y para toda ventana $\alpha<\beta$, el algoritmo alfa--beta cumple:
+\[
+\begin{array}{ll}
+F_2(p,\alpha,\beta)\le\alpha & \text{si }F(p)\le\alpha,\\
+F_2(p,\alpha,\beta)=F(p) & \text{si }\alpha<F(p)<\beta,\\
+F_2(p,\alpha,\beta)\ge\beta & \text{si }F(p)\ge\beta.
+\end{array}
+\]
+En particular, $F_2(p,-\infty,+\infty)=F(p)$.
+\end{theorem}
+
+\begin{proofbox}
+La inducción se hace sobre la altura del árbol desde $p$.
+
+\textbf{Base.} Si $p$ es terminal, el algoritmo devuelve $f(p)$. Por definición, $F(p)=f(p)$, así que se cumple cualquiera de los tres casos.
+
+\textbf{Hipótesis inductiva.} Supón que el teorema ya es cierto para todos los hijos de $p$.
+
+\textbf{Paso.} Si $p$ no es terminal, el algoritmo revisa hijos y mantiene el invariante anterior. Cada llamada recursiva es correcta por hipótesis inductiva. Si una llamada muestra que $m\ge\beta$, entonces $F(p)\ge\beta$ y devolver cualquier valor $\ge\beta$ es suficiente para la especificación. Si no hay corte, al terminar se habrá calculado el máximo de todos los $-F(p_i)$ junto con $\alpha$. Si el valor real está dentro de la ventana, el máximo coincide exactamente con $F(p)$. Si queda por debajo de $\alpha$, el algoritmo devuelve una cota no mayor útil para el padre. Por tanto se cumplen los tres casos.
+\end{proofbox}
+
+\section{Ejemplo gráfico de poda}
+
+\[
+\begin{forest}
+for tree={draw, rounded corners, align=center, s sep=10mm, l sep=11mm}
+[MAX
+  [MIN, fill=softGreen
+    [3]
+    [5]
+  ]
+  [MIN, fill=softRed
+    [2]
+    [9, dashed]
+  ]
+]
+\end{forest}
+\]
+
+Primero se evalúa el hijo izquierdo: MIN devuelve $3$, entonces MAX ya tiene $\alpha=3$. Al entrar al hijo derecho, MIN revisa el primer hijo y ve $2$. Como MIN puede dejar a MAX en $2$, y MAX ya tenía $3$, no hace falta revisar el $9$. Ese $9$ está podado.
+
+\section{3 en raya}
+
+En 3 en raya los valores pueden ser $1,0,-1$. El árbol completo es pequeño comparado con ajedrez, por eso es ideal para aprender.
+
+\begin{examplebox}
+Tablero, turno de X:
+\[
+\begin{array}{ccc}
+X & O & X\\
+. & O & .\\
+. & . & .
+\end{array}
+\]
+X debe bloquear o crear amenaza según la búsqueda. Alfa--beta evaluará las respuestas de O y podará ramas cuando ya se sepa que una jugada no puede mejorar la mejor alternativa actual.
+\end{examplebox}
+
+Código de evaluación:
+\begin{lstlisting}[style=pythonSoft]
+def score_for_x(board):
+    if X_gana(board): return 1
+    if O_gana(board): return -1
+    return 0
+\end{lstlisting}
+
+\section{Ajedrez}
+
+En ajedrez, el árbol es enorme. Por eso se usa búsqueda a profundidad limitada y una función heurística:
+\[
+\text{eval}(p)= material + seguridad\_rey + movilidad + estructura\_peones + \cdots
+\]
+
+\begin{examplebox}
+Si MAX analiza una captura de dama que parece dar $+9$, pero MIN tiene una recaptura forzada que deja la posición en $0$, alfa--beta ayuda a descartar variantes inferiores una vez que una línea rival ya refutó la jugada.
+\end{examplebox}
+
+En motores reales se combinan además ordenamiento de jugadas, tablas de transposición, profundización iterativa, extensiones de jaque y búsqueda de quietud.
+
+\section{Damas}
+
+En damas hay muchas líneas de captura forzada. Esto ayuda al ordenamiento, porque las capturas suelen ser candidatas naturales a explorar primero.
+
+\begin{examplebox}
+Si una jugada permite que el rival capture una pieza gratis, esa respuesta rival puede actuar como refutación. Cuando la refutación alcanza o supera el límite $\beta$, las demás respuestas de esa rama se podan.
+\end{examplebox}
+
+\section{Análisis de complejidad}
+
+Sin poda, con factor de ramificación $b$ y profundidad $m$, se visitan aproximadamente:
+\[
+1+b+b^2+\cdots+b^m = \frac{b^{m+1}-1}{b-1}=\Theta(b^m).
+\]
+
+Con orden perfecto, alfa--beta puede acercarse a:
+\[
+\Theta(b^{m/2}).
+\]
+
+La intuición es que, en el mejor caso, se necesita explorar completamente una rama principal y usar sus valores para cortar muchas ramas hermanas.
+
+\section{Posiciones críticas y mejor caso}
+
+Numera cada nodo por la secuencia de elecciones que lleva a él. Por ejemplo, $314$ significa: tercera jugada desde la raíz, luego primera, luego cuarta.
+
+Una posición es \textbf{crítica} si todos los índices pares son $1$ o todos los índices impares son $1$. En un árbol uniforme de grado $d$ y nivel $l$, bajo condiciones de mejor caso, alfa--beta examina:
+\[
+d^{\lfloor l/2\rfloor}+d^{\lceil l/2\rceil}-1
+\]
+posiciones del nivel $l$.
+
+\begin{proofbox}
+Hay $d^{\lfloor l/2\rfloor}$ secuencias donde las posiciones impares quedan fijadas en $1$ y las restantes pueden variar. Hay $d^{\lceil l/2\rceil}$ secuencias donde las posiciones pares quedan fijadas en $1$ y las restantes pueden variar. La secuencia $111\ldots1$ fue contada dos veces, por eso se resta $1$.
+\end{proofbox}
+
+\section{Optimalidad en el sentido del paper}
+
+La idea fuerte es: si no conocemos dependencias secretas entre hojas, existe un orden del árbol en el que alfa--beta no evalúa más hojas terminales que cualquier algoritmo correcto para determinar el valor de la raíz.
+
+\begin{idea}
+Esto no dice que alfa--beta siempre sea el algoritmo más rápido en cualquier implementación. Dice que, bajo el modelo formal de árbol de juego con hojas independientes, sus cortes son óptimos en un sentido preciso.
+\end{idea}
+
+\section{Resumen de cuándo se poda}
+
+\begin{center}
+\begin{tabular}{lll}
+\hline
+Situación & Lectura & Acción \\
+\hline
+$\alpha<\beta$ & la rama aún puede importar & seguir explorando \\
+$\alpha\ge\beta$ & el rival ya refuta esta línea & podar hermanos restantes \\
+Buen orden de jugadas & mejores cortes antes & menos nodos visitados \\
+Mal orden de jugadas & cortes tardíos o inexistentes & costo cercano a minimax \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Implementación Python mínima}
+
+\begin{lstlisting}[style=pythonSoft]
+def alphabeta(node, alpha=-float('inf'), beta=float('inf')):
+    if node.is_terminal():
+        return node.value
+
+    value = -float('inf')
+    for child in node.children:
+        candidate = -alphabeta(child, -beta, -alpha)
+        value = max(value, candidate)
+        alpha = max(alpha, value)
+        if alpha >= beta:
+            break
+    return value
+\end{lstlisting}
+
+\section{Checklist para estudiar el algoritmo}
+
+\begin{enumerate}
+\item Entender qué es una posición y qué son sus sucesores.
+\item Entender valores terminales $f(p)$.
+\item Calcular manualmente minimax en árboles pequeños.
+\item Reescribir minimax como negamax.
+\item Añadir $\alpha$ y $\beta$ como cotas.
+\item Verificar el invariante después de cada hijo.
+\item Practicar podas con árboles dibujados.
+\item Ejecutar el código del repositorio y comparar nodos visitados.
+\end{enumerate}
+
+\section{Conclusión}
+
+Alfa--beta es minimax con memoria de cotas. No ``predice'' el futuro: usa desigualdades para demostrar que ciertas ramas ya no pueden cambiar la decisión. Su corrección depende del invariante de la ventana $[\alpha,\beta)$ y se prueba naturalmente por inducción sobre la altura del árbol. En juegos reales como ajedrez y damas, su potencia depende mucho del ordenamiento de jugadas y de la calidad de la función de evaluación cuando la búsqueda se corta a una profundidad fija.
+
+\end{document}
