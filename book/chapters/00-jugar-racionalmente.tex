@@ -1,0 +1,183 @@
+\chapter{¿Qué significa jugar racionalmente?}
+
+\section{Motivación}
+
+Cuando dos personas juegan ajedrez, damas o tres en raya, rara vez eligen un movimiento al azar. Cada decisión suele responder a un razonamiento de la forma:
+
+\begin{quote}
+Si realizo este movimiento, mi oponente tendrá ciertas respuestas. Si responde de una manera, yo podré continuar de otra. Después de varias jugadas, algunas posiciones serán favorables y otras serán desfavorables.
+\end{quote}
+
+Esta forma de pensar parece natural, pero desde el punto de vista matemático contiene preguntas profundas:
+
+\begin{itemize}
+\item ¿Qué significa que una posición sea mejor que otra?
+\item ¿Cómo se representan todas las continuaciones posibles?
+\item ¿Cómo se modela la respuesta de un oponente racional?
+\item ¿Qué significa garantizar un resultado?
+\item ¿Es posible evitar analizar partes del futuro sin perder corrección?
+\end{itemize}
+
+Alpha--Beta Pruning responde la última pregunta, pero solo puede entenderse después de responder las anteriores.
+
+\begin{summarybox}
+Este capítulo no introduce todavía el algoritmo Alpha--Beta. Su objetivo es construir el problema que Alpha--Beta intenta resolver.
+\end{summarybox}
+
+\section{Objetivos del capítulo}
+
+Al finalizar este capítulo, el lector deberá poder:
+
+\begin{enumerate}
+\item distinguir entre jugar, elegir una jugada y razonar estratégicamente;
+\item explicar por qué un juego puede representarse como un árbol;
+\item comprender informalmente la explosión combinatoria;
+\item reconocer la diferencia entre una decisión intuitiva y una decisión formal;
+\item entender por qué necesitaremos funciones de utilidad, árboles y cotas.
+\end{enumerate}
+
+\section{Un ejemplo inicial: tres en raya}
+
+Consideremos la posición
+\[
+S_0=\board{X}{O}{X}{\blank}{O}{\blank}{\blank}{\blank}{\blank}.
+\]
+
+Es el turno de $X$. Una persona con algo de experiencia no observa únicamente el tablero actual. También observa amenazas futuras. En particular, nota que $O$ ocupa la columna central en las casillas 2 y 5. Si $O$ llega a ocupar la casilla 8, ganará.
+
+\begin{intuitionbox}
+El tablero actual no contiene solo información sobre el presente. También contiene información sobre futuros posibles. Jugar racionalmente significa razonar sobre esos futuros antes de elegir.
+\end{intuitionbox}
+
+En este estado, las casillas vacías son
+\[
+\{4,6,7,8,9\}.
+\]
+Por tanto, $X$ tiene cinco movimientos legales. Si $X$ ignora la amenaza y juega en la casilla 4, se obtiene
+\[
+S_4=\board{X}{O}{X}{X}{O}{\blank}{\blank}{\blank}{\blank}.
+\]
+Entonces $O$ puede responder en la casilla 8:
+\[
+S_{4,8}=\board{X}{O}{X}{X}{O}{\blank}{\blank}{O}{\blank}.
+\]
+La columna central queda formada por $O,O,O$. Por tanto, $O$ gana.
+
+\section{Primer árbol de razonamiento}
+
+El razonamiento anterior puede dibujarse como un árbol pequeño:
+
+\[
+\begin{forest}
+game tree
+[$S_0$\\$X$ mueve
+  [$S_4$\\$X$ juega 4
+    [$S_{4,8}$\\$O$ juega 8\\gana $O$, fill=softRed]
+  ]
+  [$S_8$\\$X$ bloquea 8, fill=softGreen]
+]
+\end{forest}
+\]
+
+El árbol no muestra todavía todas las posibilidades. Muestra únicamente dos ideas:
+
+\begin{enumerate}
+\item algunas jugadas permiten una derrota inmediata;
+\item otras jugadas bloquean amenazas.
+\end{enumerate}
+
+\begin{stepbox}{Lectura del árbol}
+La raíz representa el estado actual. Cada arista representa una jugada. Cada hijo representa el tablero resultante. Un camino desde la raíz representa una secuencia de jugadas.
+\end{stepbox}
+
+\section{Decidir no es lo mismo que adivinar}
+
+Una computadora no sabe que una jugada ``se ve peligrosa''. Necesita reglas. Para transformar la intuición en un procedimiento formal, necesitamos responder:
+
+\begin{itemize}
+\item qué estados existen;
+\item qué movimientos son legales;
+\item qué estado se produce después de cada movimiento;
+\item cuándo termina el juego;
+\item qué valor tiene cada resultado final.
+\end{itemize}
+
+Estas preguntas convertirán el problema de jugar en un problema matemático.
+
+\section{Explosión combinatoria}
+
+Si desde un estado existen $b$ movimientos posibles y analizamos $d$ jugadas hacia el futuro, el número de secuencias posibles puede crecer como
+\[
+b^d.
+\]
+
+Esta expresión es pequeña para valores pequeños, pero crece muy rápido. Por ejemplo:
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+Factor $b$ & Profundidad $d$ & Hojas aproximadas $b^d$\\
+\midrule
+3 & 4 & 81\\
+5 & 6 & 15\,625\\
+20 & 4 & 160\,000\\
+35 & 6 & 1\,838\,265\,625\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{warningbox}
+El problema no es solo que existan muchas posiciones. El problema es que el número de posiciones crece multiplicativamente con la profundidad. Esta es la razón por la que ajedrez y damas requieren poda y evaluación heurística.
+\end{warningbox}
+
+\section{Racionalidad en juegos de suma cero}
+
+En este libro diremos que un jugador se comporta racionalmente si elige acciones que maximizan su objetivo, suponiendo que el oponente también intenta maximizar el suyo.
+
+En juegos de suma cero, ambos objetivos están en conflicto. Si $MAX$ mejora su resultado, $MIN$ empeora el suyo. Por eso podemos medir todo desde el punto de vista de $MAX$:
+
+\[
+\text{gana MAX}=1,\qquad \text{empate}=0,\qquad \text{pierde MAX}=-1.
+\]
+
+\begin{formalbox}
+Este cambio es fundamental: dejamos de hablar de gustos, intuiciones o preferencias vagas y empezamos a hablar de valores numéricos comparables.
+\end{formalbox}
+
+\section{De la intuición al modelo}
+
+El paso central del libro será transformar frases informales en objetos matemáticos:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Frase informal & Objeto formal\\
+\midrule
+El tablero actual & estado $s\in\States$\\
+Puedo mover aquí & acción $a\in\Legal(s)$\\
+Después queda este tablero & sucesor $\Succ(s,a)$\\
+El juego terminó & predicado $\Term(s)$\\
+Esta posición es buena & utilidad $\Utility(s)$\\
+Elijo la mejor opción & operador $\max$\\
+Mi rival elige contra mí & operador $\min$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Errores comunes}
+
+\begin{warningbox}
+\textbf{Error 1:} creer que Alpha--Beta cambia la respuesta de Minimax. Alpha--Beta no cambia la respuesta; solo evita analizar ramas irrelevantes.
+
+\textbf{Error 2:} creer que $\alpha$ es siempre el valor exacto del nodo actual. En realidad, $\alpha$ es una cota inferior conocida bajo cierto contexto de búsqueda.
+
+\textbf{Error 3:} creer que un árbol de juego siempre debe llegar al final real del juego. En juegos complejos se usan hojas artificiales y funciones de evaluación.
+\end{warningbox}
+
+\section{Resumen}
+
+En este capítulo vimos que jugar racionalmente implica razonar sobre futuros posibles. Ese razonamiento puede representarse mediante árboles. Sin embargo, los árboles crecen de manera explosiva. Por eso necesitaremos algoritmos capaces de calcular decisiones óptimas sin recorrer partes innecesarias del árbol.
+
+\section{Conexión con el siguiente capítulo}
+
+El siguiente capítulo introduce los fundamentos matemáticos que permitirán convertir estas ideas en definiciones precisas. Empezaremos con conjuntos, funciones, relaciones, recursividad e inducción.
