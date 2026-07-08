@@ -1,0 +1,73 @@
+\chapter{Árboles de juego}
+
+\section{Modelo formal de un juego finito}
+
+\begin{definition}[Juego bipersonal finito, determinista y de suma cero]
+Un juego bipersonal finito, determinista y de suma cero se modela mediante la tupla
+\[
+G=(\States,s_0,\MAX,\MIN,\Player,\Legal,\Succ,\Term,\Utility).
+\]
+Sus componentes son:
+\begin{itemize}
+\item $\States$: conjunto de estados posibles;
+\item $s_0\in\States$: estado inicial;
+\item $\MAX$ y $\MIN$: los dos jugadores;
+\item $\Player(s)$: jugador que mueve en el estado $s$;
+\item $\Legal(s)$: conjunto de movimientos legales en $s$;
+\item $\Succ(s,a)$: estado sucesor al aplicar el movimiento $a$ en $s$;
+\item $\Term(s)$: predicado que indica si $s$ es terminal;
+\item $\Utility(s)$: valor numérico de un estado terminal desde el punto de vista de $\MAX$.
+\end{itemize}
+\end{definition}
+
+\begin{intuitionbox}
+``Determinista'' significa que una jugada produce siempre el mismo resultado. ``Suma cero'' significa que lo que favorece a un jugador perjudica al otro. Si MAX gana $1$, MIN pierde $1$; si MAX pierde $1$, MIN gana $1$.
+\end{intuitionbox}
+
+\section{Construcción del árbol}
+
+\begin{definition}[Árbol de juego]
+El árbol de juego asociado a un estado $s$ es el árbol enraizado en $s$ tal que:
+\begin{enumerate}
+\item la raíz es $s$;
+\item si $u$ es un nodo no terminal, sus hijos son exactamente los estados de $\Children(u)$;
+\item si $u$ es terminal, no tiene hijos.
+\end{enumerate}
+\end{definition}
+
+\begin{formalbox}
+La regla de construcción puede escribirse así:
+\[
+\Children(s)=\{\Succ(s,a):a\in\Legal(s)\}.
+\]
+Si $\Term(s)=\true$, entonces $\Legal(s)=\varnothing$ y $\Children(s)=\varnothing$.
+\end{formalbox}
+
+\section{Niveles, profundidad y factor de ramificación}
+
+\begin{definition}[Profundidad]
+La profundidad de un nodo es la cantidad de aristas que hay desde la raíz hasta ese nodo. La raíz tiene profundidad $0$.
+\end{definition}
+
+\begin{definition}[Factor de ramificación]
+El factor de ramificación de un estado $s$ es el número de hijos de $s$:
+\[
+ b(s)=|\Children(s)|.
+\]
+Cuando todos los nodos tienen aproximadamente $b$ hijos, se dice informalmente que el árbol tiene factor de ramificación $b$.
+\end{definition}
+
+\section{Por qué los árboles crecen tan rápido}
+
+Si cada estado tiene $b$ hijos y exploramos hasta profundidad $d$, el número de hojas es aproximadamente
+\[
+ b^d.
+\]
+
+\begin{example}[Crecimiento con $b=3$]
+Si $b=3$ y $d=4$, hay $3^4=81$ hojas. Esto coincide con el tipo de árbol usado en los ejemplos clásicos de análisis de alpha--beta: pocas ramas por nodo, pero explosión exponencial al crecer la profundidad.
+\end{example}
+
+\begin{summarybox}
+El árbol de juego convierte un problema estratégico en un problema de búsqueda. Minimax asignará valores a los nodos; Alpha--Beta intentará evitar visitar nodos cuyo valor no puede cambiar la decisión final.
+\end{summarybox}
