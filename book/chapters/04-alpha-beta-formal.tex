@@ -1,0 +1,67 @@
+\chapter{Alpha--Beta como razonamiento con cotas}
+
+\section{La idea central}
+
+Alpha--Beta no cambia el valor Minimax. Su propósito es evitar cálculos que no pueden modificar la decisión final.
+
+\begin{intuitionbox}
+Supongamos que MAX ya encontró una jugada que garantiza valor $5$. Si al analizar otra jugada MIN encuentra una respuesta que deja a MAX con valor $3$, MAX nunca elegirá esa jugada alternativa. No importa si las otras respuestas de MIN dejarían a MAX con $4$, $2$ o $-10$: esa rama ya quedó refutada.
+\end{intuitionbox}
+
+\section{Cotas}
+
+\begin{definition}[Cota inferior $\alpha$]
+Durante la búsqueda, $\alpha$ representa el mejor valor que MAX ya puede garantizar en el camino actual.
+\end{definition}
+
+\begin{definition}[Cota superior $\beta$]
+Durante la búsqueda, $\beta$ representa el mejor valor que MIN ya puede garantizar para impedir que MAX obtenga demasiado.
+\end{definition}
+
+\begin{formalbox}
+La relación fundamental es
+\[
+\alpha < \beta.
+\]
+El intervalo abierto $(\alpha,\beta)$ contiene los valores que todavía pueden cambiar la decisión del ancestro que llamó al nodo actual.
+\end{formalbox}
+
+\section{Condición de poda}
+
+\begin{theorem}[Regla de poda alpha--beta]
+Durante la evaluación de un nodo, si se llega a una situación en la que
+\[
+\alpha \ge \beta,
+\]
+entonces los hijos restantes del nodo no necesitan examinarse para preservar el valor Minimax de la raíz.
+\end{theorem}
+
+\begin{proof}
+La prueba se basa en el significado de las cotas.
+
+Si $\alpha$ es una cota inferior ya garantizada para MAX, entonces MAX tiene disponible una alternativa cuyo valor es al menos $\alpha$.
+
+Si $\beta$ es una cota superior impuesta por MIN en un ancestro, entonces MIN tiene disponible una alternativa que evita que MAX obtenga más de $\beta$ en esa línea.
+
+Cuando $\alpha\ge\beta$, cualquier valor que el nodo actual pudiera producir ya no puede mejorar la decisión del jugador que controla el ancestro relevante. En particular:
+\begin{itemize}
+\item si el nodo está bajo una elección de MAX, MAX ya tiene una alternativa al menos tan buena;
+\item si el nodo está bajo una elección de MIN, MIN ya tiene una refutación suficientemente buena.
+\end{itemize}
+
+Por tanto, explorar los hijos restantes podría revelar valores locales más precisos, pero esos valores no pueden cambiar la elección final propagada hacia la raíz. La poda preserva el valor Minimax.
+\end{proof}
+
+\section{Invariante principal}
+
+\begin{invariant}[Intervalo de relevancia]
+Al entrar a un nodo $s$ con cotas $(\alpha,\beta)$, solo son relevantes para el ancestro los valores estrictamente dentro del intervalo:
+\[
+\alpha < V(s) < \beta.
+\]
+Si se demuestra que $V(s)\le \alpha$ o que $V(s)\ge \beta$, el valor exacto de $V(s)$ deja de ser necesario para decidir en la raíz.
+\end{invariant}
+
+\begin{summarybox}
+Minimax pregunta: ``¿cuál es el valor exacto de cada subárbol?'' Alpha--Beta pregunta: ``¿necesito saber el valor exacto de este subárbol para decidir?''
+\end{summarybox}
