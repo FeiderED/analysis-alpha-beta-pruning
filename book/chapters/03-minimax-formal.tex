@@ -1,0 +1,93 @@
+\chapter{Construcción matemática de Minimax}
+
+\section{Valor de utilidad}
+
+\begin{definition}[Función de utilidad]
+La función de utilidad asigna un valor numérico a cada estado terminal:
+\[
+\Utility:\{s\in\States:\Term(s)=\true\}\to\mathbb{R}.
+\]
+El valor se interpreta desde el punto de vista de MAX.
+\end{definition}
+
+En tres en raya, una convención habitual es:
+\[
+\Utility(s)=
+\begin{cases}
+1, & \text{si MAX gana en }s,\\
+0, & \text{si el resultado es empate,}\\
+-1, & \text{si MIN gana en }s.
+\end{cases}
+\]
+
+\section{Definición recursiva de Minimax}
+
+\begin{definition}[Valor Minimax]
+El valor Minimax de un estado $s$, denotado $V(s)$, se define recursivamente por
+\[
+V(s)=
+\begin{cases}
+\Utility(s), & \text{si }\Term(s)=\true,\\[2mm]
+\max\{V(s'):s'\in\Children(s)\}, & \text{si }\Player(s)=\MAX,\\[2mm]
+\min\{V(s'):s'\in\Children(s)\}, & \text{si }\Player(s)=\MIN.
+\end{cases}
+\]
+\end{definition}
+
+\begin{intuitionbox}
+MAX elige la rama que le deja el mayor valor. MIN elige la rama que deja a MAX con el menor valor. Por eso aparecen $\max$ y $\min$ alternadamente.
+\end{intuitionbox}
+
+\section{Por qué la definición está bien fundada}
+
+La definición anterior parece circular: $V(s)$ depende de $V(s')$. No obstante, no hay circularidad real si el juego es finito.
+
+\begin{theorem}[Existencia del valor Minimax]
+Si todo camino desde $s$ llega a un estado terminal en un número finito de jugadas, entonces $V(s)$ está bien definido.
+\end{theorem}
+
+\begin{proof}
+Demostraremos la afirmación por inducción sobre la altura restante $h(s)$.
+
+\textbf{Caso base.} Si $h(s)=0$, entonces $s$ es terminal. Por definición,
+\[
+V(s)=\Utility(s).
+\]
+Como $\Utility(s)$ está definida para estados terminales, $V(s)$ está definido.
+
+\textbf{Hipótesis inductiva.} Supongamos que para todo estado $u$ con $h(u)\le k$, el valor $V(u)$ está definido.
+
+\textbf{Paso inductivo.} Sea $s$ un estado con $h(s)=k+1$. Entonces $s$ no es terminal o, si lo fuera, estaríamos en el caso base. Para cada hijo $s'\in\Children(s)$ se cumple $h(s')\le k$, porque al mover desde $s$ consumimos una jugada. Por hipótesis inductiva, cada $V(s')$ está definido.
+
+Si $\Player(s)=\MAX$, entonces $V(s)$ es el máximo de un conjunto finito de valores definidos. Por tanto está definido. Si $\Player(s)=\MIN$, entonces $V(s)$ es el mínimo de un conjunto finito de valores definidos. Por tanto también está definido.
+
+Concluimos por inducción que $V(s)$ está definido para todo estado finito.
+\end{proof}
+
+\section{Lectura estratégica}
+
+\begin{proposition}[Garantía de MAX]
+Si MAX juega siempre una acción que alcanza el máximo en los estados donde le toca mover, entonces puede garantizar al menos $V(s)$ desde el estado $s$.
+\end{proposition}
+
+\begin{proof}
+La prueba se hace por inducción sobre $h(s)$.
+
+Si $s$ es terminal, no hay decisión que tomar y el resultado es exactamente $\Utility(s)=V(s)$.
+
+Si $s$ no es terminal y mueve MAX, por definición de máximo existe un hijo $s^*$ tal que
+\[
+V(s^*)=\max\{V(s'):s'\in\Children(s)\}=V(s).
+\]
+MAX escoge una acción que conduce a $s^*$. Desde ahí, por hipótesis inductiva aplicada al subárbol, el valor que puede garantizar coincide con $V(s^*)$.
+
+Si mueve MIN, MAX no controla la elección inmediata. Pero cualquiera que sea el hijo $s'$ elegido por MIN, la definición de mínimo garantiza que
+\[
+V(s')\ge \min\{V(u):u\in\Children(s)\}=V(s).
+\]
+Por hipótesis inductiva, desde ese hijo MAX puede garantizar al menos $V(s')$, y por la desigualdad anterior eso es al menos $V(s)$.
+\end{proof}
+
+\begin{summarybox}
+Minimax no es una heurística. En árboles finitos completamente explorados, calcula el valor que se obtiene bajo juego óptimo de ambos jugadores.
+\end{summarybox}
