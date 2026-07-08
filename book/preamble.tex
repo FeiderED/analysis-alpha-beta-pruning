@@ -28,6 +28,8 @@
 \definecolor{softRedLine}{HTML}{C97E7E}
 \definecolor{softGray}{HTML}{F5F5F5}
 \definecolor{softGrayLine}{HTML}{A0A0A0}
+\definecolor{softPurple}{HTML}{F1ECFA}
+\definecolor{softPurpleLine}{HTML}{9A83C8}
 
 \newtheorem{definition}{Definición}[chapter]
 \newtheorem{theorem}[definition]{Teorema}
@@ -45,6 +47,10 @@
 \newtcolorbox{warningbox}{colback=softRed,colframe=softRedLine,title=Cuidado,breakable}
 \newtcolorbox{stepbox}[1]{colback=softYellow,colframe=softYellowLine,title={#1},breakable}
 \newtcolorbox{summarybox}{colback=softGray,colframe=softGrayLine,title=Resumen,breakable}
+\newtcolorbox{objectivesbox}{colback=softPurple,colframe=softPurpleLine,title=Objetivos del capítulo,breakable}
+\newtcolorbox{commonmistakesbox}{colback=softRed,colframe=softRedLine,title=Errores comunes,breakable}
+\newtcolorbox{readerbox}{colback=softBlue,colframe=softBlueLine,title=Cómo leer este resultado,breakable}
+\newtcolorbox{nextbox}{colback=softGreen,colframe=softGreenLine,title=Conexión con el siguiente capítulo,breakable}
 
 \newcommand{\States}{\mathcal{S}}
 \newcommand{\Moves}{\mathcal{M}}
@@ -67,6 +73,8 @@
 #4 & #5 & #6 \\ \hline
 #7 & #8 & #9 \\ \hline
 \end{array}}
+
+\newcommand{\chapterstatus}[1]{\begin{summarybox}\textbf{Estado editorial:} #1\end{summarybox}}
 
 \forestset{
   game tree/.style={
