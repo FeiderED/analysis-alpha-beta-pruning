@@ -1,0 +1,145 @@
+\chapter{Damas y ajedrez paso a paso}
+
+\section{Por qué estos juegos son distintos de tres en raya}
+
+Tres en raya permite mostrar el árbol completo de posiciones pequeñas. Damas y ajedrez introducen dos dificultades nuevas:
+
+\begin{enumerate}
+\item el factor de ramificación es mucho mayor;
+\item las hojas evaluadas normalmente no son terminales reales, sino posiciones cortadas a cierta profundidad.
+\end{enumerate}
+
+Por eso, en estos juegos distinguimos entre terminalidad real y terminalidad por profundidad.
+
+\begin{definition}[Hoja artificial]
+Una hoja artificial es un estado no terminal que el análisis decide tratar como hoja porque se alcanzó una profundidad máxima de búsqueda.
+\end{definition}
+
+\section{Damas: ejemplo de captura obligatoria}
+
+Consideremos una posición simplificada de damas. Usaremos $x$ para una ficha de MAX, $o$ para una ficha de MIN y $\blank$ para una casilla vacía relevante.
+
+\[
+D_0=
+\begin{array}{cccc}
+\blank & o & \blank & \blank\\
+\blank & \blank & x & \blank\\
+\blank & \blank & \blank & \blank\\
+\blank & \blank & \blank & \blank
+\end{array}
+\]
+
+Si las reglas obligan a capturar cuando existe una captura, el conjunto de movimientos legales no contiene todos los movimientos diagonales posibles, sino solo los movimientos de captura.
+
+\begin{formalbox}
+La diferencia se expresa así:
+\[
+\Legal(D_0)=\{a\in\Moves: a\text{ es captura legal desde }D_0\},
+\]
+si existe al menos una captura. Solo cuando no existe captura se permiten movimientos ordinarios.
+\end{formalbox}
+
+\begin{intuitionbox}
+La regla de captura obligatoria reduce el árbol. En vez de ramificar sobre muchos movimientos tranquilos, el juego fuerza una línea táctica. Esto puede hacer que Alpha--Beta encuentre refutaciones más rápido.
+\end{intuitionbox}
+
+\section{Árbol inicial de damas}
+
+\[
+\begin{forest}
+game tree
+[$D_0$\\MAX mueve
+  [$D_1$\\captura obligatoria]
+]
+\end{forest}
+\]
+
+Este árbol tiene un solo hijo en el primer nivel. Por tanto,
+\[
+ b(D_0)=1.
+\]
+Aunque el juego de damas suele tener muchas posibilidades, las reglas locales pueden hacer que el factor de ramificación cambie drásticamente de un nodo a otro.
+
+\section{Ajedrez: ejemplo de apertura}
+
+En ajedrez, desde la posición inicial las blancas tienen 20 movimientos legales. Esto ya produce un árbol mucho más grande que tres en raya.
+
+Representaremos una línea inicial:
+\[
+1.e4\quad c5\quad 2.Nf3.
+\]
+
+\begin{stepbox}{Paso 1: raíz}
+La raíz $C_0$ es la posición inicial. Mueven blancas, que tomaremos como MAX.
+\end{stepbox}
+
+\begin{stepbox}{Paso 2: primer movimiento}
+MAX considera $1.e4$. El estado sucesor se llama $C_1$.
+\end{stepbox}
+
+\begin{stepbox}{Paso 3: respuesta de MIN}
+MIN responde $1...c5$. El estado sucesor se llama $C_2$.
+\end{stepbox}
+
+\begin{stepbox}{Paso 4: segundo movimiento de MAX}
+MAX juega $2.Nf3$. El estado sucesor se llama $C_3$.
+\end{stepbox}
+
+\section{Árbol parcial de ajedrez}
+
+\[
+\begin{forest}
+game tree
+[$C_0$\\blancas/MAX
+  [$C_1$\\$1.e4$
+    [$C_2$\\$1...c5$
+      [$C_3$\\$2.Nf3$]
+      [$C_4$\\$2...d6$]
+      [$C_5$\\$2...Nc6$]
+    ]
+    [$C_6$\\$1...e5$]
+    [$C_7$\\$1...c6$]
+  ]
+  [$C_8$\\$1.d4$]
+  [$C_9$\\$1.Nf3$]
+]
+\end{forest}
+\]
+
+\section{Evaluación de hojas artificiales en ajedrez}
+
+En ajedrez real no podemos llegar al final de la partida. Por eso, al cortar el árbol, usamos una función de evaluación heurística.
+
+\begin{definition}[Evaluación heurística]
+Una evaluación heurística es una función
+\[
+E:\States\to\mathbb{R}
+\]
+que aproxima la utilidad de una posición no terminal.
+\end{definition}
+
+Una evaluación básica puede combinar:
+\begin{itemize}
+\item material;
+\item movilidad;
+\item seguridad del rey;
+\item control del centro;
+\item estructura de peones.
+\end{itemize}
+
+\begin{warningbox}
+La evaluación heurística no es igual a la utilidad terminal. Minimax con hojas artificiales calcula el valor óptimo respecto a la evaluación elegida, no necesariamente respecto al resultado real de la partida.
+\end{warningbox}
+
+\section{Plan de ampliación}
+
+Las siguientes entregas convertirán este bosquejo en ejemplos completos:
+
+\begin{enumerate}
+\item diagramas de tablero para cada nodo;
+\item explicación de cada movimiento legal considerado;
+\item valores heurísticos de hojas;
+\item retropropagación Minimax;
+\item poda Alpha--Beta con $\alpha$ y $\beta$ en cada nodo;
+\item comparación entre orden bueno y orden malo de movimientos.
+\end{enumerate}
